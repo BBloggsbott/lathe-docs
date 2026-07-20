@@ -1,0 +1,11 @@
+[project]
+name = "lathe-docs"
+version = "0.1.0"
+description = "User Documentation for [lathe](https://github.com/BBloggsbott/lathe)"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "mike==2.2.0",
+    "mkdocs==1.6.1",
+    "mkdocs-material==9.7.7",
+]
