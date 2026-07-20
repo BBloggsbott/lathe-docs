@@ -1,4 +1,7 @@
 site_name: Lathe
+site_description: User documentation for Lathe, a YAML-based AI agent pipeline builder.
+repo_url: https://github.com/BBloggsbott/lathe
+repo_name: BBloggsbott/lathe
 theme:
   name: material
   palette:
@@ -13,13 +16,40 @@ theme:
   features:
       - navigation.tabs
       - navigation.sections
+      - navigation.indexes
       - content.code.copy
+      - content.tabs.link
       - search.suggest
+      - toc.follow
 markdown_extensions:
   - admonition
+  - pymdownx.details
   - pymdownx.highlight
-  - pymdownx.superfences
+  - pymdownx.inlinehilite
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
   - pymdownx.tabbed:
       alternate_style: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - attr_list
+  - md_in_html
+  - toc:
+      permalink: true
 plugins:
+  - search
   - mike
+extra_css:
+  - stylesheets/extra.css
+nav:
+  - Home:
+    - Home: index.md
+    - Getting Started: getting-started.md
+    - Concepts: concepts.md
+    - Examples: examples.md
+    - Limitations & Roadmap: limitations.md
+  - Pipeline YAML Reference: pipeline-reference.md
+  - CLI Reference: cli-reference.md
