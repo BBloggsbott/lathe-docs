@@ -44,6 +44,9 @@ markdown_extensions:
 plugins:
   - search
   - mike
+extra:
+  version:
+    provider: mike
 extra_css:
   - stylesheets/extra.css
 nav:
