@@ -76,7 +76,7 @@ Each entry in `nodes` is tagged with `!Start`, `!LLMNode`, or `!End` — this ta
 
 Constraints:
 
-- Exactly one `Start` node is required per graph — it's the entry point.
+- Exactly one `Start` node is required per graph — it's the entry point. See [Validation rules](#validation-rules).
 - It passes the initial `AgentState` through unchanged. If the initial state is empty, it errors.
 
 ### `LLMNode`
@@ -154,5 +154,7 @@ Lathe validates a graph when it's loaded (on by default for `lathe run` and `lat
 
 - Every connection's `node_id` (both `from` and `to`) must reference a node that exists in `nodes`.
 - Every leaf node (no outgoing connections) must be an `End` node, and every `End` node must be a leaf node.
+- A graph must have exactly one `Start` node — none or more than one fails validation.
+- Every node other than `Start` must have at least one incoming connection; a node with no incoming connection fails validation.
 
 See [Concepts § Validation](concepts.md#validation) for more on when and why this runs.

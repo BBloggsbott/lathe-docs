@@ -82,6 +82,8 @@ When a pipeline YAML is loaded — the default behavior for `lathe run` and `lat
 
 - Every connection must reference node ids that actually exist in the graph.
 - Every leaf node (no outgoing connections) must be an `End` node, and every `End` node must be a leaf node.
+- A graph must have exactly one `Start` node.
+- Every non-`Start` node must have at least one incoming connection — a node no connection ever points to fails validation.
 
 See [Pipeline YAML Reference § Validation rules](pipeline-reference.md#validation-rules) for the authoritative list.
 
