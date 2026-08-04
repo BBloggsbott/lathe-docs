@@ -71,7 +71,7 @@ If you're using OpenAI, set your API key as an environment variable or in a `.en
 export OPENAI_API_KEY=sk-...
 ```
 
-If you're using LM Studio instead, start LM Studio's local server — Lathe talks to it at `http://localhost:1234/v1` by default, no API key required. See [Concepts § provider_configs](concepts.md#provider_configs) for how to point at a different endpoint.
+If you're using LM Studio instead, start LM Studio's local server — Lathe talks to it at `http://localhost:1234/v1` by default, no API key required. See [Concepts § Provider Configs](concepts.md#provider-configs) for how to point at a different endpoint.
 
 ## Quickstart: your first pipeline
 

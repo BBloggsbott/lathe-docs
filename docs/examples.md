@@ -1,6 +1,6 @@
 # Examples
 
-Lathe ships two built-in example pipelines, generated with `lathe example <name>`. This page walks through both.
+Lathe ships three built-in example pipelines, generated with `lathe example <name>`. This page walks through each.
 
 ## Simple agent
 
@@ -28,24 +28,19 @@ nodes:
   input_key: /message
   output_key: /output_message
   provider_config_id: my-model
+  tools: []
 - !End
   id: end-node
   label: lathe::nodes::end
   out_pointers:
   - /output_message
 connections:
-- from:
-    node_id: start-node
-    name: to Simple Assistant LLM Node
-  to:
-    node_id: llm-node
-    name: from lathe::nodes::start
-- from:
-    node_id: llm-node
-    name: to lathe::nodes::end
-  to:
-    node_id: end-node
-    name: from Simple Assistant LLM Node
+- from: start-node
+  to: llm-node
+  label: lathe::nodes::start to Simple Assistant LLM Node
+- from: llm-node
+  to: end-node
+  label: Simple Assistant LLM Node to lathe::nodes::end
 provider_configs:
   my-model:
     id: my-model
@@ -102,24 +97,27 @@ nodes:
   input_key: /message
   output_key: /explanation
   provider_config_id: my-model
+  tools: []
 - !LLMNode
   id: llm-summarizer-node
-  label: Explainer LLM Node
+  label: Summarizer LLM Node
   provider: OpenAI
   model: gpt-5-mini
   system_prompt: You are an expert in {{/message}} who summarizes text. Given the text, produce a concise summary of two to three sentences that captures the key points while preserving the original meaning.
   input_key: /explanation
   output_key: /summary
   provider_config_id: my-model
+  tools: []
 - !LLMNode
   id: llm-topic-generator-node
-  label: Explainer LLM Node
+  label: Topic Generator LLM Node
   provider: OpenAI
   model: gpt-5-mini
   system_prompt: You are an expert in {{/message}} who writes titles for text. Given some text, generate a short, descriptive title (five words or fewer) that captures its essence.
   input_key: /explanation
   output_key: /title
   provider_config_id: my-model
+  tools: []
 - !End
   id: end-node
   label: lathe::nodes::end
@@ -128,36 +126,21 @@ nodes:
   - /summary
   - /title
 connections:
-- from:
-    node_id: start-node
-    name: to Explainer LLM Node
-  to:
-    node_id: llm-explainer-node
-    name: from lathe::nodes::start
-- from:
-    node_id: llm-explainer-node
-    name: to Explainer LLM Node
-  to:
-    node_id: llm-summarizer-node
-    name: from Explainer LLM Node
-- from:
-    node_id: llm-explainer-node
-    name: to Explainer LLM Node
-  to:
-    node_id: llm-topic-generator-node
-    name: from Explainer LLM Node
-- from:
-    node_id: llm-summarizer-node
-    name: to lathe::nodes::end
-  to:
-    node_id: end-node
-    name: from Explainer LLM Node
-- from:
-    node_id: llm-topic-generator-node
-    name: to lathe::nodes::end
-  to:
-    node_id: end-node
-    name: from Explainer LLM Node
+- from: start-node
+  to: llm-explainer-node
+  label: lathe::nodes::start to Explainer LLM Node
+- from: llm-explainer-node
+  to: llm-summarizer-node
+  label: Explainer LLM Node to Summarizer LLM Node
+- from: llm-explainer-node
+  to: llm-topic-generator-node
+  label: Explainer LLM Node to Topic Generator LLM Node
+- from: llm-summarizer-node
+  to: end-node
+  label: Summarizer LLM Node to lathe::nodes::end
+- from: llm-topic-generator-node
+  to: end-node
+  label: Topic Generator LLM Node to lathe::nodes::end
 provider_configs:
   my-model:
     id: my-model
@@ -195,9 +178,114 @@ lathe run --pipeline examples/explainer_agent.yaml --message "quantum entangleme
 
 `/message` isn't in the output even though the summarizer and title-generator nodes read it via `{{/message}}` templating. Only the three pointers listed in the `End` node's `out_pointers` (`/explanation`, `/summary`, `/title`) are surfaced.
 
-## Serving either example
+## Weather agent (tool calling)
 
-Both examples work the same way with `lathe server`. The pipeline doesn't change, only how you invoke it:
+Generate it with:
+
+```sh
+lathe example weather --provider open-ai --model gpt-5-mini
+```
+
+This writes `examples/weather_agent.yaml`, a Start -> LLM -> End pipeline where the LLM node has two `HttpRequest` tools to call:
+
+```yaml
+graph_version: V1
+name: Example Lathe Graph - Weather
+nodes:
+- !Start
+  id: start-node
+  label: lathe::nodes::start
+- !LLMNode
+  id: llm-node
+  label: Simple Assistant LLM Node
+  provider: OpenAI
+  model: gpt-5-mini
+  system_prompt: You are a helpful assistant that can get the weather forecast for a city and can do general smalltalk. If the user does not mention a city, do not generate any weather forecast
+  input_key: /message
+  output_key: /output_message
+  provider_config_id: my-model
+  tools:
+  - geocode-tool
+  - forecast-tool
+- !End
+  id: end-node
+  label: lathe::nodes::end
+  out_pointers:
+  - /output_message
+connections:
+- from: start-node
+  to: llm-node
+  label: lathe::nodes::start to Simple Assistant LLM Node
+- from: llm-node
+  to: end-node
+  label: Simple Assistant LLM Node to lathe::nodes::end
+provider_configs:
+  my-model:
+    id: my-model
+    base_url: null
+    api_key: null
+    provider: OpenAI
+tools:
+  geocode-tool:
+    kind: HttpRequest
+    name: geocode-tool
+    description: Look Up City Coordinates in Latitude and Longitude
+    method: GET
+    url: https://nominatim.openstreetmap.org/search?city={{city}}&format=json
+    headers:
+      User-Agent: lathe-weather-agent/1.0
+    body: null
+    timeout: 5000
+    response_type: Json
+    params:
+      city:
+        type: Text
+        description: City name to geocode, e.g. 'Chennai'
+  forecast-tool:
+    kind: HttpRequest
+    name: forecast-tool
+    description: Get Weather Forecast for a given latitude and longitude
+    method: GET
+    url: https://api.open-meteo.com/v1/forecast?latitude={{latitude}}&longitude={{longitude}}&current=temperature_2m,wind_speed_10m
+    headers:
+      User-Agent: lathe-weather-agent/1.0
+    body: null
+    timeout: 5000
+    response_type: Json
+    params:
+      longitude:
+        type: Float
+        description: Longitude of the location, from the geocode-city tool
+      latitude:
+        type: Float
+        description: Latitude of the location, from the geocode-city tool
+```
+
+The graph shape is the same straight line as the simple example:
+
+```mermaid
+graph LR
+    A[start-node] --> B[llm-node]
+    B --> C[end-node]
+```
+
+The difference is the `llm-node`'s `tools` list and the top-level `tools` map. When the user's message mentions a city, the model can call `geocode-tool` to resolve it to latitude/longitude via [Nominatim](https://nominatim.openstreetmap.org/), then call `forecast-tool` with those coordinates to fetch current conditions from [Open-Meteo](https://open-meteo.com/), before writing its final reply to `/output_message`. Both tool calls happen inside a single `LLMNode` invocation — see [Concepts § Tools](concepts.md#tools).
+
+```sh
+lathe run --pipeline examples/weather_agent.yaml --message "What's the weather like in Chennai?"
+```
+
+```json
+{
+  "output_message": "It's currently around 30°C in Chennai with light winds."
+}
+```
+
+If the message doesn't mention a city, the model follows the system prompt and skips the tool calls entirely, falling back to smalltalk.
+
+## Serving any example
+
+All three examples work the same way with `lathe server`. The pipeline doesn't change, only how you invoke it:
 
 ```sh
 lathe server --pipeline examples/explainer_agent.yaml --port 8080

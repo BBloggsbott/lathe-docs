@@ -18,11 +18,11 @@ lathe example <NAME> --provider <PROVIDER> --model <MODEL>
 
 | Argument | Flag | Values | Description |
 |---|---|---|---|
-| `name` | *(positional)* | `simple`, `explainer`, `none` | Which built-in example to generate. |
+| `name` | *(positional)* | `simple`, `explainer`, `weather`, `none` | Which built-in example to generate. |
 | `provider` | `-p`, `--provider` | `open-ai`, `lm-studio` | LLM provider written into the generated pipeline's `provider_configs`. |
 | `model` | `-m`, `--model` | any string | Model name written into the generated pipeline. |
 
-Creates an `examples/` directory in the current working directory if it doesn't already exist, then writes `examples/simple_agent.yaml` or `examples/explainer_agent.yaml` depending on `name` (`none` does nothing). Both generated files use a `provider_configs` entry with `api_key: null` and `base_url: null`, so credentials come from the environment (see [Environment variables](#environment-variables)) or from LM Studio's default local endpoint.
+Creates an `examples/` directory in the current working directory if it doesn't already exist, then writes `examples/simple_agent.yaml`, `examples/explainer_agent.yaml`, or `examples/weather_agent.yaml` depending on `name` (`none` does nothing). All generated files use a `provider_configs` entry with `api_key: null` and `base_url: null`, so credentials come from the environment (see [Environment variables](#environment-variables)) or from LM Studio's default local endpoint.
 
 ```sh
 lathe example simple --provider open-ai --model gpt-5-mini
