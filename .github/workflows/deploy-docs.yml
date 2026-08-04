@@ -1,0 +1,57 @@
+name: Deploy versioned docs
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Fetch gh-pages branch
+        run: git fetch origin gh-pages --depth=1
+
+      - name: Configure git identity
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v9
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: uv sync --locked
+
+      - name: Resolve version from tag
+        id: version
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Find current latest version
+        id: old_latest
+        run: |
+          OLD=$(uv run mike list latest -j 2>/dev/null | jq -r '.version // empty')
+          echo "version=$OLD" >> "$GITHUB_OUTPUT"
+
+      - name: Deploy new version as latest
+        run: |
+          uv run mike deploy --push --update-aliases \
+            "${{ steps.version.outputs.version }}" latest \
+            --title "${{ steps.version.outputs.version }} (latest)"
+
+      - name: Remove "(latest)" suffix from previous version
+        if: steps.old_latest.outputs.version != '' && steps.old_latest.outputs.version != steps.version.outputs.version
+        run: |
+          uv run mike retitle --push \
+            "${{ steps.old_latest.outputs.version }}" \
+            "${{ steps.old_latest.outputs.version }}"
