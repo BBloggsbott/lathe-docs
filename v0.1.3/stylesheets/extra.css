@@ -1,5 +1,0 @@
-/* Keep the first column of reference tables (field/argument/route names) from wrapping. */
-.md-typeset table:not([class]) td:first-child,
-.md-typeset table:not([class]) th:first-child {
-  white-space: nowrap;
-}
